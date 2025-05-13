@@ -5,7 +5,7 @@
 </p>
 
 <div align="center">
-  <a href="[https://arxiv.org/abs/2505.07007](https://arxiv.org/pdf/2505.07007)">📄  [Read our arXiv Paper] </a>
+  <a href="https://arxiv.org/pdf/2505.07007">📄  [Read our arXiv Paper] </a>
 </div>
 
 ***
