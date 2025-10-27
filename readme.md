@@ -1,6 +1,6 @@
 # MELLM: Exploring LLM-Powered Micro-Expression Understanding Enhanced by Subtle Motion Perception
 
-[![Paper](https://img.shields.io/badge/paper-arXiv-red)](https://arxiv.org/abs/[Your_ArXiv_ID])
+[![Paper](https://img.shields.io/badge/paper-arXiv-red)](https://arxiv.org/abs/2505.07007)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
