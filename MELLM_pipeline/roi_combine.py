@@ -9,26 +9,6 @@ def extract_eye_region_rois(
     offset_pixels=None,
     pad_mode=cv2.BORDER_REFLECT_101
 ):
-    """
-    从 image 中根据 landmarks 提取小方块 ROI。
-    - image: HxW(xC) 的 numpy 图像（BGR 或 灰度）。
-    - landmarks: (98,2) numpy array 或 可索引的 (98,2)，坐标格式为 (x, y)（像素）。
-                 说明里你的索引是 1-based，代码会自动处理（传入的 landmarks 是 0-based 存储，下面的 indices_map 使用 1-based）。
-    - indices_map: dict，区域名称 -> list of indices (1-based, 与问题描述一致)。
-                   默认包含你在问题中给出的四个区域：
-                       left_eye_lower:  [68, 67, 66]
-                       right_eye_lower: [76, 75, 74]
-                       left_eye_upper:  [62, 63, 64]
-                       right_eye_upper: [70, 71, 72]
-    - roi_size: int, 小方块边长，默认 5。
-    - offset_pixels: tuple (dx, dy) 或 None。dx 表示左右偏移量（positive = 向右），dy 表示上下偏移（positive = 向下）。
-                     如果为 None，默认使用 (roi_size, roi_size)。
-    - pad_mode: cv2 的边界扩展标志，默认用反射。可替换为 cv2.BORDER_CONSTANT 等。
-    
-    返回:
-      dict: region_name -> list of dicts, 每个 dict:
-            { 'index': 原始 1-based 索引, 'center': (cx,cy), 'topleft': (tx,ty), 'roi': patch_numpy_array }
-    """
     if indices_map is None:
         indices_map = {
             'left_eye_lower' : [68, 67, 66],
@@ -52,7 +32,6 @@ def extract_eye_region_rois(
     else:
         H, W, C = img.shape
 
-    # padding 宽度：保证所有偏移后的中心周围能完整截取 roi_size
     pad = int(max(dx, dy) + half + 2)
     padded = cv2.copyMakeBorder(img, pad, pad, pad, pad, pad_mode)
 
@@ -63,36 +42,28 @@ def extract_eye_region_rois(
 
     for region_name, indices in indices_map.items():
         region_list = []
-        # 假定 indices 顺序是从左到右（如你给的），并且每个 region 恰好有 3 个点（left, middle, right）
         n = len(indices)
         for i, idx1 in enumerate(indices):
-            # 转换 1-based -> 0-based
             idx0 = int(idx1) - 1
-            x, y = lm[idx0]   # x,y 可以是 float
-            # 根据 region 名称来决定偏移方向（lower: 下偏移，upper: 上偏移）
-            # 对于三点顺序 (left, mid, right) 我们使用 x-shifts = [-dx, 0, +dx]
+            x, y = lm[idx0]  
             x_shift = (-dx if i == 0 else (dx if i == n-1 else 0))
             if 'lower' in region_name:
-                y_shift = dy   # 向下
+                y_shift = dy   
             elif 'upper' in region_name:
-                y_shift = -dy  # 向上
+                y_shift = -dy  
             else:
-                # 如果用户扩展其他区域，可以修改这里的规则
                 y_shift = 0
 
             cx = float(x + x_shift)
             cy = float(y + y_shift)
 
-            # 因为图像被 padding 了，所以索引要加上 pad
             cx_pad = int(round(cx)) + pad
             cy_pad = int(round(cy)) + pad
 
             tx = cx_pad - half
             ty = cy_pad - half
 
-            # 切 patch（注意：行 = y, 列 = x）
             patch = padded[ty:ty + roi_size, tx:tx + roi_size].copy()
-            # 如果图像只有单通道，保持二维数组；否则保证返回 HxWxC
             if C == 1 and patch.ndim == 3:
                 patch = patch[:, :, 0]
 
@@ -100,7 +71,7 @@ def extract_eye_region_rois(
                 'index': idx1,
                 'center': (cx, cy),
                 'topleft_in_padded': (tx, ty),
-                'topleft_in_original': (tx - pad, ty - pad),  # 若需要映射回原图坐标
+                'topleft_in_original': (tx - pad, ty - pad),  
                 'roi': patch
             })
 
@@ -109,37 +80,30 @@ def extract_eye_region_rois(
     return results
 
 def draw_rois_on_image(image, rois, roi_size=5, line_thickness=1, text_scale=0.4):
-    """
-    在 image 上绘制 rois（来自 extract_eye_region_rois 的返回结构）。
-    返回带标注的图像拷贝。
-    """
+
     img = image.copy()
     H, W = img.shape[:2]
 
     # 颜色与样式
-    rect_color = (0, 255, 0)   # BGR, 绿色边框
-    center_color = (0, 0, 255) # 中心点为红色
+    rect_color = (0, 255, 0)  
+    center_color = (0, 0, 255) 
     text_color = (255, 255, 255)
     font = cv2.FONT_HERSHEY_SIMPLEX
     roi_dic = []
     for region_name, items in rois.items():
         for item in items:
-            idx = item['index']  # 1-based
-            # 左上角在原图坐标系（可能为负）
+            idx = item['index']  
             tx, ty = item.get('topleft_in_original', (None, None))
             if tx is None:
-                # 如果没有提供 topleft_in_original，则从 center 计算
                 cx, cy = item['center']
                 tx = int(round(cx)) - roi_size // 2
                 ty = int(round(cy)) - roi_size // 2
 
-            # 计算右下角（确保整数）
             x1 = int(round(tx))
             y1 = int(round(ty))
             x2 = x1 + roi_size - 1
             y2 = y1 + roi_size - 1
 
-            # 裁剪到图像范围（避免负值或越界）
             x1_clip = max(0, min(W - 1, x1))
             y1_clip = max(0, min(H - 1, y1))
             x2_clip = max(0, min(W - 1, x2))
@@ -161,9 +125,7 @@ def draw_rois_on_image(image, rois, roi_size=5, line_thickness=1, text_scale=0.4
                 '75': 'right_eye_down_center',
                 '74': 'right_eye_down_right', 
             }
-            # 只有当裁剪后仍然有面积时才绘制
             if x2_clip >= x1_clip and y2_clip >= y1_clip:
-                # 矩形（边框）
                 cv2.rectangle(img, (x1_clip, y1_clip), (x2_clip, y2_clip), rect_color, thickness=line_thickness)
                 text = str(idx)
                 roi_dic.append({
@@ -176,18 +138,15 @@ def draw_rois_on_image(image, rois, roi_size=5, line_thickness=1, text_scale=0.4
 
 
 def get_center(landmarks, indices):
-    """根据多个 landmark index 计算中心点 (x,y)，indices 是 1-based"""
-    pts = landmarks[np.array(indices) - 1]  # 转换为 0-based
+    pts = landmarks[np.array(indices) - 1] 
     center = pts.mean(axis=0)
     return tuple(center.tolist())
 
 def draw_roi(roi_list, center, roi_size=10, color=(0,255,0), thickness=1, label=None):
-    """在图像上绘制方形 ROI"""
     cx, cy = int(round(center[0])), int(round(center[1]))
     half = roi_size // 2
     x1, y1 = cx - half, cy - half
     x2, y2 = cx + half, cy + half
-    # cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
     roi_list.append({
         'pos_name': label,
         'position': [x1, y1, x2, y2]
@@ -195,12 +154,8 @@ def draw_roi(roi_list, center, roi_size=10, color=(0,255,0), thickness=1, label=
     return roi_list
 
 def draw_all_rois(landmarks, roi_size=15):
-    """
-    绘制左/右外眉、左/右内眉、左右鼻翼 ROI
-    """
     roi_list = []
 
-    # 眉毛 ROI
     roi_defs = {
         "left_outer_brow": [35, 42, 34],
         "left_inner_brow": [37, 38, 40, 39],
@@ -212,13 +167,10 @@ def draw_all_rois(landmarks, roi_size=15):
         center = get_center(landmarks, indices)
         roi_list = draw_roi(roi_list, center, roi_size=roi_size, color=(0,255,0), label=name)
 
-    # 鼻翼 ROI
-    # 左鼻翼 (56) → 往左上偏移
-    left_wing = landmarks[56-1]  # index 56 转换为 0-based
+    left_wing = landmarks[56-1] 
     left_wing_center = (left_wing[0] - roi_size // 2, left_wing[1] - roi_size // 2)
     roi_list = draw_roi(roi_list, left_wing_center, roi_size=roi_size + 5, color=(255,0,0), label="left_wing")
 
-    # 右鼻翼 (60) → 往右上偏移
     right_wing = landmarks[60-1]
     right_wing_center = (right_wing[0] + roi_size // 2, right_wing[1] - roi_size // 2)
     roi_list = draw_roi(roi_list, right_wing_center, roi_size=roi_size + 5, color=(0,0,255), label="right_wing")
@@ -354,16 +306,10 @@ def face_scale_from_landmarks(landmarks):
 
 
 def crop_cheek_rois(image, landmarks, face_bbox=None,
-                    side_length_ratio=0.12,   # ROI 边长相对 face_height 的比例（默认经验值）
-                    shit_ratio=0.05 # 确保 ROI 顶部不包含眼睛：相对于 face_height 的最小距离
+                    side_length_ratio=0.12,   
+                    shit_ratio=0.05 
                    ):
-    """
-    返回左右两侧脸颊的 square ROI 图像片段与其框坐标 (x1,y1,x2,y2)（若超出图像则 clip）
-    - image: numpy array (H_img, W_img, C)
-    - landmarks: numpy array shape (68,2) 或 list of (x,y) 以 iBUG(68) 索引
-    - face_bbox: 可选 (x,y,w,h) —— 若未提供则用 landmarks 推测 face_height H
-    - 返回: dict {'left': {'img':..., 'bbox':(x1,y1,x2,y2)}, 'right':{...}}
-    """
+
     h_img, w_img = image.shape[:2]
     lm = np.array(landmarks, dtype=np.float32)
 
@@ -372,16 +318,14 @@ def crop_cheek_rois(image, landmarks, face_bbox=None,
     L_mouth = lm[77-1]
     R_mouth = lm[83-1]
 
-    # face height 用 face_bbox 的 h 或者用 landmark 范围估计
     if face_bbox is not None:
         _, _, _, face_h = face_bbox[0], face_bbox[1], face_bbox[2], face_bbox[3]
         H = float(face_h)
     else:
         y_coords = lm[:,1]
-        H = float(y_coords.max() - y_coords.min())  # 经验估计
+        H = float(y_coords.max() - y_coords.min()) 
 
-    # 参数换算为像素
-    S = max(4, int(round(side_length_ratio * H)))      # ROI 边长 (至少 4px)
+    S = max(4, int(round(side_length_ratio * H)))      
     shit_dis = shit_ratio * H
     def make_square(center_x, center_y, side):
         half = side // 2
@@ -400,7 +344,6 @@ def crop_cheek_rois(image, landmarks, face_bbox=None,
 
     results = {}
 
-    # ----- 左侧脸颊 -----
     center_L = (L_eye_outer + L_mouth) / 2.0
     cx_L, cy_L = float(center_L[0]) - shit_dis, float(center_L[1]) - shit_dis
 
@@ -409,7 +352,6 @@ def crop_cheek_rois(image, landmarks, face_bbox=None,
     x1Lc, y1Lc, x2Lc, y2Lc = clip_bbox(x1L, y1L, x2L, y2L)
     results['left'] = (x1Lc, y1Lc, x2Lc, y2Lc)
 
-    # ----- 右侧脸颊 -----
     center_R = (R_eye_outer + R_mouth) / 2.0
     cx_R, cy_R = float(center_R[0]) + shit_dis, float(center_R[1]) - shit_dis
 
@@ -471,13 +413,12 @@ def draw_mouth_and_cheek_rois_on_image(image, landmarks,
 import os
 
 def get_roi_flow(flow, landmarks):
-    # 调用你已有的函数提取 rois
     rois = extract_eye_region_rois(flow, landmarks, roi_size=10, offset_pixels=(5,5))
     rois_eyes = draw_rois_on_image(flow, rois, roi_size=10, line_thickness=1, text_scale=0.4)
     rois_brows_nose = draw_all_rois(landmarks, roi_size=15)
 
-    roi_size = 15          # 你指定的边长
-    corner_shift = roi_size // 2  # 左右嘴角偏移量，可改为 e.g. roi_size//2 等
+    roi_size = 15         
+    corner_shift = roi_size // 2  
 
     roi_mouth = draw_mouth_rois_on_image(flow, landmarks, roi_size=roi_size, corner_shift=corner_shift)
 
@@ -501,47 +442,6 @@ def get_roi_flow(flow, landmarks):
         flow_dic[roi_name] = flow[y1:y2, x1:x2]
 
     return flow_dic, roi_dic_total
-
-
-
-
-
-
-
-if __name__ == "__main__":
-    image_path = '/data/zyzhang/flow_code/headmove/sub0009-03sa-03-sadness-01-sadness.jpg'
-    filename = 'sub0009-03sa-03-sadness-01-sadness'
-    emo = filename.split('-')[-1]
-    landmarks_path = f'/data/zyzhang/dataset/dfme_final/sadness/sub0009-03sa-03-sadness-01-sadness/lm0.npy'
-
-    image = cv2.imread(image_path)
-    landmarks = np.load(landmarks_path)  # 期望形状 (98,2)
-    # 调用你已有的函数提取 rois
-    rois = extract_eye_region_rois(image, landmarks, roi_size=10, offset_pixels=(5,5))
-    rois_eyes = draw_rois_on_image(image, rois, roi_size=10, line_thickness=1, text_scale=0.4)
-    rois_brows_nose = draw_all_rois(landmarks, roi_size=15)
-
-    roi_size = 15          # 你指定的边长
-    corner_shift = roi_size // 2  # 左右嘴角偏移量，可改为 e.g. roi_size//2 等
-
-    roi_mouth = draw_mouth_rois_on_image(image, landmarks, roi_size=roi_size, corner_shift=corner_shift)
-
-
-    roi_cheek_chin = draw_mouth_and_cheek_rois_on_image(image, landmarks,
-                                                   mouth_roi_size=10,
-                                                   chin_roi_size=25,
-                                                   cheek_roi_size=None,  # auto from face width
-                                                   corner_shift=10,
-                                                   cheek_upper_ratio=0.02)
-    roi_dic_total = rois_eyes + rois_brows_nose + roi_mouth + roi_cheek_chin
-
-    for sample in roi_dic_total:
-        roi_name = sample['pos_name']
-        x1,y1,x2,y2 = sample['position']
-
-        cv2.rectangle(image, (x1,y1), (x2,y2), (0,0,0), 1)
-    cv2.imwrite('rois.png', image)
-
 
 
 def describe_flow_direction(
