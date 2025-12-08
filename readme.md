@@ -47,8 +47,8 @@ put them into ckpt fold
 python pipeline.py
 ```
 
-## Train
-Training ans Evaluate code will coming soon.
+## Dataset and Training
+The training code and dataset will be released as open-source upon acceptance of the paper.
 
 ## Acknowledgements
 This project relies on code from existing repositories: princeton-vl/WAFT
