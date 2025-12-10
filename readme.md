@@ -1,4 +1,4 @@
-# MELLM: Exploring LLM-Powered Micro-Expression Understanding Enhanced by Subtle Motion Perception
+# MELLM: A Flow-Guided Large Language Model for Micro-Expression Understanding
 
 [![Paper](https://img.shields.io/badge/paper-arXiv-red)](https://arxiv.org/abs/2505.07007)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
