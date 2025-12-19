@@ -50,6 +50,11 @@ python pipeline.py
 ## Dataset and Training
 The training code and dataset will be released as open-source upon acceptance of the paper.
 
+## The earlier version of MELLM
+An earlier version of MELLM was based on Qwen-2.5-VL.
+Paper: https://pan.ustc.edu.cn/share/index/dce992fe6ae04c11ba86?p=1
+Code: https://github.com/zyzhangUstc/mellmv1-base-on-Qwen2.5vl-7B-
+
 ## Acknowledgements
 This project relies on code from existing repositories: princeton-vl/WAFT
  and Qwen3. We thank the original authors for their excellent work.
