@@ -53,7 +53,7 @@ The training code and dataset will be released as open-source upon acceptance of
 ## The earlier version of MELLM
 An earlier version of MELLM was based on Qwen-2.5-VL.
 
-Paper: https://pan.ustc.edu.cn/share/index/dce992fe6ae04c11ba86?p=1
+Paper: https://arxiv.org/pdf/2505.07007v1
 
 Code: https://github.com/zyzhangUstc/mellmv1-base-on-Qwen2.5vl-7B-
 
