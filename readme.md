@@ -50,13 +50,12 @@ This ensures logs are written to a valid user directory instead of the original 
 
 ### 3. Prepare Model Weights
 download weights from 
-link：https://pan.ustc.edu.cn/share/index/60a8dfef271b4cd99c3e?p=1
-password：8888
+link：ttps://pan.baidu.com/s/1J35NV76iSPlVjAfHH2NjNA?pwd=s5ku
 
 and
 
-link：https://pan.ustc.edu.cn/share/index/33be577e4e6648bab96a?p=1
-password：8888
+link：https://pan.baidu.com/s/1mNumDG9E9Cf130zfNJCBmw?pwd=jhrj
+
 
 put them into ckpt fold
 
