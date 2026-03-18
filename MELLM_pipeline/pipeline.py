@@ -27,8 +27,8 @@ import json
 
 if __name__ == "__main__":
     device = torch.device("cuda")
-    onset_path = "frame_1.jpg"
-    apex_path = "frame_2.jpg"
+    onset_path = "frame_1.jpg" # the onset frame
+    apex_path = "frame_2.jpg" # the apex frame
     with open("config/meflownet.json", "r") as f:
         args = json.load(f)
     args = argparse.Namespace(**args)
