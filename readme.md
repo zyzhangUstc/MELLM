@@ -26,9 +26,27 @@ conda activate mellm
 
 git clone https://github.com/zyzhangUstc/MELLM.git
 cd MELLM_pipeline
+
+# Install Dependencies
+conda install pillow
+pip install openface-test
 pip install -r requirements.txt
+
+# Download Pretrained Weights
+huggingface-cli download --resume-download nutPace/openface_weights --local-dir weights
 ```
-install OpenFace-3.0 from https://github.com/CMU-MultiComp-Lab/OpenFace-3.0
+Modify the file `/envs/mellm/lib/python3.12/site-packages/openface/STAR/conf/base.py` to fix a hardcoded logging path. In the `init_instance(self)` function (around line 70), add the following line right after the function definition:
+
+```python
+def init_instance(self):
+    self.log_dir = os.path.expanduser("~/logs") # new add
+    self.writer = SummaryWriter(logdir=self.log_dir, comment=self.type)
+...
+```
+
+This ensures logs are written to a valid user directory instead of the original hardcoded path.
+
+
 
 ### 3. Prepare Model Weights
 download weights from 
