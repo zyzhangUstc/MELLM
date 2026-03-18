@@ -1,1 +1,1 @@
-put the meflownet.pth and LLM models here.
+put the meflownet.pth and LLM model here.
