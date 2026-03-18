@@ -7,7 +7,9 @@ numpy
 scipy
 opencv-python
 tensorboard
+accelerate
 h5py
 tqdm
 einops
 timm
+huggingface-hub==0.34.0
