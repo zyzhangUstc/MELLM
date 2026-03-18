@@ -50,7 +50,7 @@ This ensures logs are written to a valid user directory instead of the original 
 
 ### 3. Prepare Model Weights
 download weights from 
-link：ttps://pan.baidu.com/s/1J35NV76iSPlVjAfHH2NjNA?pwd=s5ku
+link：https://pan.baidu.com/s/1J35NV76iSPlVjAfHH2NjNA?pwd=s5ku
 
 and
 
